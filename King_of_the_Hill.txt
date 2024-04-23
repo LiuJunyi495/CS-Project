@@ -1,0 +1,688 @@
+import tkinter as tk
+import tkinter.messagebox
+import random
+import queue
+
+
+#   u5547386 - Start
+class Grid:
+    """ A superclass of each grid in the map. """
+    def __init__(self, number, grid_type=None):
+        self.number = number # The number of the grid.
+        self.type = grid_type
+
+
+class BossGrid(Grid):
+    """ A subclass of gird contained boss. """
+    def __init__(self, number):
+        super().__init__(number, "Boss")
+        # Make sure boss has a suitable power.
+        self.power = int(number * random.uniform(1, 2))
+    
+    #   5554570 - beginning.
+    def boss_battle(self, player_power):
+        """ Simulates a boss battle. """
+        return player_power > self.power
+    #   5554570 - end.
+
+
+class GameGrid(Grid):
+    """A subclass of gird contained game."""
+    def __init__(self, number):
+        super().__init__(number, "Game")
+        card_game = CardDeck()
+        # Randomly choose a game for the Grid.
+        self.game = random.choice([f"{random.choice(card_game.card_challenges)}", "Coin Flip 🪙",
+                                    "Rock-Paper\n -Scissors\n ✊✋✌️", "Treasure Hunt\n🕵️"])
+
+
+class PointGrid(Grid):
+    """A subclass of gird where player can collect points."""
+    def __init__(self, number):
+        super().__init__(number, "Point")
+        # Edited by 5554570.
+        # 20% chance of generating a high point value.
+        self.point = random.randint(11, 20) if random.random() < 0.2 else random.randint(1, 10)
+        # Edited by 5554570.
+#   u5547386 - End
+
+
+#   5554570 - beginning.
+class Player:
+    """ Represents the player in the game. """
+    def __init__(self, health_points, combat_effectiveness):
+        """ Initialize the player with health points and combat effectiveness. """
+        self.health_points = health_points
+        self.combat_effectiveness = combat_effectiveness
+        self.player_position = positions.get()
+
+    def move(self, steps):
+        """ Move the player position by a number of steps without exceeding the grid limit. """
+        #   Edited by 5547386 
+        steps = max(0, steps)
+        for _ in range(steps):
+            if not positions.empty():
+                self.player_position = positions.get()
+            else:
+                break
+        #   Edited by 5547386
+
+    def update_hp(self, hp_change):
+        """ Updating the players health points and making sure it doesn't go below zero. """
+        self.health_points += hp_change
+        self.health_points = max(0, self.health_points)
+        hp_label.config(text=f"HP: {self.health_points}", width=self.health_points//2) # Edited by u5547386 - Update label in the function
+        if self.health_points < 1:
+            global positions
+            # Edited by u5547386 - add lose condition
+            print('Defeat')
+            tk.messagebox.showinfo(title='You lose this game!',message="You were defeated by the boss!\nLet's try again.")
+            positions = copy_grids()
+            self.player_position = positions.get()
+            restart()
+            hp_label.config(text=f"HP: {self.health_points}", width=self.health_points//2)
+            ce_label.config(text=f"CE: {self.combat_effectiveness}", width=min(50,self.combat_effectiveness//2))
+            # Edited by u5547386
+    
+    def update_ce(self, ce_change):
+        """ Updating the players combat effectiveness and making sure it doesn't go below zero. """
+        self.combat_effectiveness += ce_change
+        self.combat_effectiveness = max(0, self.combat_effectiveness)
+        ce_label.config(text=f"CE: {self.combat_effectiveness}", width=min(50,player.combat_effectiveness//2)) 
+        # Edited by u5547386 - Update label in the function
+
+
+# Creating the card deck Game.
+class CardDeck:
+    """ A class to represent a deck of cards and card challenges. """
+    def __init__(self):
+        """ Defining the deck of cards and card challenge variables. """
+        self.suits = ["Hearts ♥️", "Diamonds ♦️", "Clubs ♣️", "Spades ♠️"]
+        self.values = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "Jack", "Queen", "King"]
+        self.deck = [f"{value} of {suit}" for suit in self.suits for value in self.values]
+        self.red_cards = [f"{card}" for card in self.deck if "Hearts ♥️" in card or "Diamonds ♦️" in card]
+        self.black_cards = [f"{card}" for card in self.deck if "Clubs ♣️" in card or "Spades ♠️" in card]
+        self.odd_cards = [f"{card}" for card in self.deck if card[0] in ["Ace", "3", "5", "7", "9", "Queen"]]
+        self.even_cards = [f"{card}" for card in self.deck if card[0] in ["2", "4", "6", "8", "Jack", "King"]]
+        # Defining the card challenges.
+        self.card_challenges = [ "Draw a\nred card 🃏", "Draw a\nblack card 🃏", "Draw an\nodd card 🃏", "Draw an\neven card 🃏"]
+
+    def draw_card(self):
+        """ Drawing a random card from the deck. """
+        return random.choice(self.deck)
+
+    def card_in_deck(self, challenge, drawn_card):
+        """ Check if the card is in the deck. """
+        # Using a linear searching algorithm to check if the card is in the deck.
+        if "red" in challenge:
+            for card in self.red_cards:
+                if card == drawn_card:
+                    return True
+        if "black" in challenge:
+            for card in self.black_cards:
+                if card == drawn_card:
+                    return True
+        if "odd" in challenge:
+            for card in self.odd_cards:
+                if card == drawn_card:
+                    return True
+        if "even" in challenge:
+            for card in self.even_cards:
+                if card == drawn_card:
+                    return True
+        return False
+
+
+class Node:
+    """ Node class for binary tree. """
+    def __init__(self, data = None):
+        """ Initialize the node with data and left and right children. """
+        self.data = data
+        self.right = None
+        self.left = None
+
+def create_tree(current_depth, max_depth = 3):
+    """ Creates a binary tree for the Treasture Hunt game. """
+    if current_depth < max_depth:
+        node = Node()
+        node.right = create_tree(current_depth+1, max_depth)
+        node.left = create_tree(current_depth+1, max_depth)
+        return node
+    else:
+        return Node()
+    
+def add_treasure(root_node, max_depth=3):
+    """ Places a Treasure in a random leaf. """
+    current_node = root_node
+    current_depth = 0
+    while current_depth < max_depth:
+        if random.choice([True, False]):
+            current_node = current_node.right
+        else:
+            current_node = current_node.left
+        current_depth += 1
+    current_node.data = "Treasure"
+
+def treasure_hunt():
+    """ Initializes the treasure hunt game and updates the challenge frame. """
+    roll_button.pack_forget()
+    root_node = create_tree(0)
+    add_treasure(root_node)
+    current_node = root_node
+    path_stack = [] # Using a stack to track the path the player took.
+    print("Starting the treasure hunt.")
+
+    def update_node(next_node):
+        """ Handles the node update and game logic. """
+        nonlocal current_node, result, right_button, left_button # Making them nonlocal so they can be destroyed.
+        # Check if the player found the treasure.
+        if next_node.right is None and next_node.left is None:
+            pnp_result = random.choice(["dice", "CE", "tp"])  # picks a random reward or penalty
+            if next_node.data == "Treasure":
+                challenges_text.insert(tk.END, "\nYou found the treasure!\n")
+                if "dice" in pnp_result:
+                    PnP.moveF()
+                elif "CE" in pnp_result:
+                    PnP.CEmax()
+                elif "tp" in pnp_result:
+                    win_button(False)
+            else:
+                challenges_text.insert(tk.END, "\nSorry, no treasure here.\n")
+                if "dice" in pnp_result:
+                    PnP.moveB()
+                elif "CE" in pnp_result:
+                    PnP.CEmin()
+                elif "tp" in pnp_result:
+                    PnP.CEmin()
+    
+            challenges_text.insert(tk.END, f"\nPath taken:\n{' -> '.join(path_stack)}\n")
+            right_button.destroy()
+            left_button.destroy()
+            result.destroy()
+            roll_button.pack()
+        else:
+            current_node = next_node
+            result.config(text="Choose a path:")
+    # Display the challenge.
+    result = tk.Label(challenges_frame, text="Choose a path:")
+    result.pack()
+    right_button = tk.Button(challenges_frame, text="Right", command=lambda: path("Right"))
+    right_button.pack(side=tk.RIGHT)
+    left_button = tk.Button(challenges_frame, text="Left", command=lambda: path("Left"))
+    left_button.pack(side=tk.LEFT)
+
+    def path(direction):
+        """ Handles the player's path choice."""
+        nonlocal current_node
+        challenges_text.insert(tk.END, f"\n{direction}\n")
+        next_node = current_node.right if direction == "Right" else current_node.left 
+        path_stack.append(direction)
+        update_node(next_node)
+
+def roll_dice():
+    """Simulates rolling a die."""
+    return random.randint(1, 6)
+#   5554570 - end.
+
+#   5553980 - start
+extra_dice = 0
+boss_indexes = []   # List to store the indexes of the boss grids.
+
+
+class PnP:
+    """ Power-ups and Penalties system. """
+    def CEmin():
+        """ Reduces the player's combat effectiveness by a number between 5-10. """
+        value = -random.randint(11, 20)
+        player.update_ce(value)
+        challenges_text.insert(tk.END, f"You Lose!\nPenalty: {value} CE")
+
+    def CEmax():
+        """ Increases the player's combat effectiveness by a number between 5-10. """
+        value = random.randint(11, 20)
+        player.update_ce(value)
+        challenges_text.insert(tk.END, f"You Win!\nPower up: +{value} CE")
+
+    def reset():
+        """ Used to reset the extra roll value to 0. """
+        global extra_dice
+        extra_dice = 0
+    
+    def moveF():
+        """ Grants the player extra steps on next roll. """
+        global extra_dice
+        extra_dice = random.randint(1, 3)
+        challenges_text.insert(tk.END, f"You Win!\nPower up: +{extra_dice} steps on next roll")
+        extra_dice_result.config(text=f"Roll applied to next move: +{extra_dice}")
+
+    def moveB():
+        """ Deducts steps from the player on next roll. """
+        global extra_dice
+        extra_dice = -(random.randint(1, 3))
+        challenges_text.insert(tk.END, f"You Lose!\nPenalty: {extra_dice} steps on next roll")
+        extra_dice_result.config(text=f"Roll applied to next move: {extra_dice}")
+    
+    def tp_point():
+        """ Move to the nearest PointGrid ahead if available, otherwise stay """
+        global positions
+        global extra_dice
+        temp_positions = list(positions.queue)  # Create a copy of the queue to safely iterate
+        current_index = player.player_position.number
+        moved = False  # Flag to check if the move was made
+        for grid in temp_positions:
+            if isinstance(grid, PointGrid) and grid.number > current_index:
+                player.player_position = grid
+                challenges_text.insert(tk.END, f"\nMoved to nearest Point Grid\nat position {grid.number + 1}\n")
+                moved = True
+                extra_dice = grid.number - current_index
+                update_grid()
+                # Handling the point change.
+                player.update_ce(grid.point) # Edit by u5547386 - Collect point as CE instead of HP.
+                
+                # Update the challenge list text with the challenge and outcome.
+                challenges_text.delete(1.0, tk.END)
+                challenges_text.insert(tk.END, f"Points gained: {grid.point}\n")
+
+                break
+        if not moved:
+            challenges_text.insert(tk.END, "\nNo Point Grid ahead to move to\n")
+
+
+
+
+class Coin:
+    """ Simulates flipping a coin. """
+    def __init__(self):
+        self.outcomes = ["Heads 🪙", "Tails 🪙"]
+
+    def flip_coin(self):
+        """ Flips the coin and returns the result. """
+        return random.choice(self.outcomes)
+    
+    def success(self, challenge, coin): 
+        """ Returns the outcome of the game. """
+        return challenge == coin
+    
+class RPS:
+    """ Simulates a Rock-Paper-Scissors game """
+    def __init__(self):
+        self.outcomes = ["Rock ✊", "Paper ✋", "Scissors ✌️"]
+
+    def choose_rps(self):
+        """ Chooses a random outcome. """
+        return random.choice(self.outcomes)
+    
+    def success(self, choice, challenge): 
+        """ Returns the outcome of the game. """
+        if choice == challenge:
+            result = "Draw"
+        elif (choice == "Rock ✊" and challenge == "Scissors ✌️") or \
+             (choice == "Paper ✋" and challenge == "Rock ✊") or \
+             (choice == "Scissors ✌️" and challenge == "Paper ✋"):
+            result = "Player wins"
+        else:
+            result = "Computer wins 🤖"
+        return result
+#   5553980 - end
+
+ #   5554570 - beginning.
+def roll_and_move():
+    """Rolls the dice, moves the player, and checks for challenges."""
+    global extra_dice_result, dice_result, challenges_text, positions, grids, roll_button
+    steps = roll_dice()
+    player.move(steps+extra_dice)
+    PnP.reset() # Reset the extra dice value.
+    update_grid()
+
+    # Update the player information.
+    dice_result.config(text=f"Dice Roll: {steps}")
+    extra_dice_result.config(text=f"Roll applied to next move: {0}")
+    current_grid = player.player_position
+    #    5553980 - start
+    
+
+    if positions.empty():
+        print("End reached")
+        # Edited by u5547386 - Make messagebox to choose whether play it again.
+        choice=tk.messagebox.askyesno(title='You win this game!',message="CONGRATULATIONS!"
+                                      "\nYou have reached the top of the hill."
+                                      "\nDo you what to play again?")
+        if choice:
+            grids = queue.Queue() # Generate grids again
+            for i in range(49):
+                grids.put(generate_grid(i))
+            positions = copy_grids()
+            player.player_position = positions.get()
+            restart()
+            hp_label.config(text=f"HP: {player.health_points}", width=player.health_points//2)
+            ce_label.config(text=f"CE: {player.combat_effectiveness}", width=min(50,player.combat_effectiveness//2))
+        else:
+            roll_button.destroy()
+        # Edited by u5547386
+        
+    if isinstance(current_grid, PointGrid):
+        # Handling the point change.
+        player.update_ce(current_grid.point) # Edit by u5547386 - Collect point as CE instead of HP.
+        
+        # Update the challenge list text with the challenge and outcome.
+        challenges_text.delete(1.0, tk.END)
+        challenges_text.insert(tk.END, f"Points gained: {current_grid.point}\n")
+
+    if isinstance(current_grid, BossGrid):
+        # Handling the boss challenge.
+        challenge_success = current_grid.boss_battle(player.combat_effectiveness)
+        challenges_text.delete(1.0, tk.END)
+        challenges_text.insert(tk.END, f"Boss Power: {current_grid.power}\n")
+        challenges_text.insert(tk.END, f"Player Power: {player.combat_effectiveness}\n")
+        challenges_text.insert(tk.END, f"You Win!\n" if challenge_success else f"You lose!\nHP - 20")
+        # Player losses 40 hp if they lose.
+        if not challenge_success:
+            player.update_hp(-40)
+        
+
+    if isinstance(current_grid, GameGrid) and "Draw" in current_grid.game:
+        # Handling the card challenge.
+        card_game = CardDeck()
+        drawn_card = card_game.draw_card()
+        challenge_success = card_game.card_in_deck(current_grid.game, drawn_card)
+        challenges_text.delete(1.0, tk.END)   # Clear the previous challenges.
+        challenges_text.insert(tk.END, f"Challenge: {current_grid.game}\n")
+        challenges_text.insert(tk.END, f"Drawn Card: {drawn_card}\n")
+        pnp_result = random.choice(["dice", "CE", "tp"])  # picks a random reward or penalty
+        if challenge_success:
+            if "dice" in pnp_result:
+                PnP.moveF()
+            elif "CE" in pnp_result:
+                PnP.CEmax()
+            elif "tp" in pnp_result:
+                win_button(False)
+        else:
+            if "dice" in pnp_result:
+                PnP.moveB()
+            elif "CE" in pnp_result:
+                PnP.CEmin()
+            elif "tp" in pnp_result:
+                PnP.CEmin()
+
+    if isinstance(current_grid, GameGrid) and "Treasure Hunt" in current_grid.game:
+        challenges_text.delete(1.0, tk.END)
+        challenges_text.insert(tk.END, f"Challenge: {current_grid.game}\nYou have 3 chances to find the treasure.\n")
+        treasure_hunt()
+    #   5554570 - end.
+
+    #   5553980 - start.
+    if isinstance(current_grid, GameGrid) and "Coin" in current_grid.game:
+        # plays a coin flip game.
+        challenges_text.delete(1.0, tk.END) # Clear the previous challenges.
+        challenges_text.insert(tk.END, f"Guess the face of\nthe flipped coin\n")
+        inpt = ""
+        coin_game = Coin()
+        button1 = tk.Button(challenges_frame, text="Heads 🪙", command=lambda c="Heads 🪙": check(c, button1, button2))
+        button1.pack()
+
+        button2 = tk.Button(challenges_frame, text="Tails 🪙", command=lambda c="Tails 🪙": check(c, button1, button2))
+        button2.pack()
+
+        roll_button.pack_forget()
+
+        def check(user_choice, button1, button2):
+            """ Checks the win condition. """
+            global inpt, roll_button
+            inpt = user_choice
+            flip_result = coin_game.flip_coin()
+            challenge_success = coin_game.success(inpt, flip_result)
+            roll_button.pack()
+
+            challenges_text.insert(tk.END, f"Your Choice: {inpt}\n")
+            challenges_text.insert(tk.END, f"Flip result: {flip_result}\n")
+
+            button1.destroy()
+            button2.destroy()
+
+            pnp_result = random.choice(["dice", "CE", "tp"]) # picks a random reward or penalty.
+            if challenge_success:
+                if "dice" in pnp_result:
+                    PnP.moveF()
+                elif "CE" in pnp_result:
+                    PnP.CEmax()
+                elif "tp" in pnp_result:
+                    win_button(False)
+            else:
+                if "dice" in pnp_result:
+                    PnP.moveB()
+                elif "CE" in pnp_result:
+                    PnP.CEmin()
+                elif "tp" in pnp_result:
+                    PnP.CEmin()
+
+    
+    if isinstance(current_grid, GameGrid) and "Rock" in current_grid.game:
+        """ plays a Rock-Paper-Scissors game. """
+        challenges_text.delete(1.0, tk.END)
+        def attempt():
+            # Attempts a game of Rock-Paper-Scissors.
+            challenges_text.insert(tk.END, f"a game of Rock-Paper-Scissors ✊✋✌️\n")
+            inpt = ""
+            rps_game = RPS()
+            button1 = tk.Button(challenges_frame, text="Rock ✊", command=lambda c="Rock ✊": check(c, button1, button2, button3))
+            button1.pack()
+            button2 = tk.Button(challenges_frame, text="Paper ✋", command=lambda c="Paper ✋": check(c, button1, button2, button3))
+            button2.pack()
+            button3 = tk.Button(challenges_frame, text="Scissors ✌️", command=lambda c="Scissors ✌️": check(c, button1, button2, button3))
+            button3.pack()
+            roll_button.destroy()
+
+            def check(user_choice, button1, button2, button3):
+                """ Checks the win condition. """
+                global inpt, roll_button
+                inpt = user_choice
+                rps_choice = rps_game.choose_rps()
+                challenge_success = rps_game.success(inpt, rps_choice)
+                roll_button = tk.Button(challenges_frame, text="Roll Dice", command=roll_and_move)
+                roll_button.pack()
+
+                challenges_text.insert(tk.END, f"Your Choice: {inpt}\n")
+                challenges_text.insert(tk.END, f"Computer Choice 🤖: {rps_choice}\n")
+                button1.destroy()
+                button2.destroy()
+                button3.destroy()
+
+                pnp_result = random.choice(["dice", "CE", "tp"]) # picks a random reward or penalty.
+                if "Player" in challenge_success:
+                    if "dice" in pnp_result:
+                        PnP.moveF()
+                    elif "CE" in pnp_result:
+                        PnP.CEmax()
+                    elif "tp" in pnp_result:
+                        win_button(False)
+                elif "Computer" in challenge_success:
+                    if "dice" in pnp_result:
+                        PnP.moveB()
+                    elif "CE" in pnp_result:
+                        PnP.CEmin()
+                    elif "tp" in pnp_result:
+                        PnP.CEmin()
+                else:
+                    challenges_text.insert(tk.END, "It's a draw\n")
+                    attempt() # reruns the game if it results in a draw.
+        attempt()
+    #   5553980 - end.
+
+#   u5547386 - Start
+def generate_grid(number):
+    """ Generates a grid based on the giver number. """
+    if number == 0:     # starting point. 
+        return Grid(number, "Start")
+    elif number == 48:  # ending point.
+        return Grid(number, "End")
+    #   Edited by 5554570.
+    # Making sure that there wouldn't be any boss battles in the first 6 squares.
+    elif number < 7:    
+        # 70% chance it is a point grid.
+        return PointGrid(number) if random.randint(1, 2) == 1 else GameGrid(number)
+    #   Edited by 5554570.
+    # Generate a number to choose grid according to fixed probabilities.
+    else:         
+        r = random.randint(1, 5)   
+        if r <= 2:
+            return PointGrid(number)    # Probability 50%.
+        elif r <= 4:
+            return GameGrid(number)     # Probability 40%.
+        else:
+            boss_indexes.append(number) # Store the index of the boss grid.
+            return BossGrid(number)     # Probability 10%.
+
+
+def create_grid(canvas, grid, x, y, player_position):
+    """ Draw a grid in canvas. """
+    # Draw different types of grids with specific attributes.
+    if grid.type == "Point":
+        canvas.create_text(x+50, y+50, fill = "blue", text=str(grid.point)+" Point")
+    elif grid.type == "Game":
+        canvas.create_text(x+50, y+50, fill = "darkorange", text=grid.game)
+    elif grid.type == "Boss":
+        if img_visible:
+            canvas.create_image((x+50,y+55), image = boss_img)
+            canvas.create_text(x+50, y+15, fill = "red", text=str(grid.power))
+        else:
+            canvas.create_text(x+50, y+50, fill = "red", text="Boss\n"+str(grid.power))
+    elif grid.type == "Start":
+        canvas.create_text(x+50, y+50, text="Start")
+    elif grid.type == "End":
+        if img_visible:
+            canvas.create_rectangle(x, y, x+100, y+100, fill="#C7F1F0")
+            canvas.create_image((x+50,y+72), image = small_hills_img)
+        canvas.create_text(x+50, y+33, text="End")
+    # Shows the players position.
+    if grid.number == player_position.number:
+        if img_visible:
+            canvas.create_image((x+50,y+50), image = player_img)
+        else:
+            canvas.create_oval(x+30, y+30, x+70, y+70, fill="green")
+    canvas.create_rectangle(x, y, x+100, y+100)
+    canvas.create_text(x+90, y+10, text=str(grid.number+1))
+
+def update_grid():
+    """ Updates and display the grids of the game. """
+    game_area.delete("all")
+    girds_show = copy_grids()
+    while not girds_show.empty():
+        grid = girds_show.get()
+        x = grid.number % 7 * 100 + 10    # Remainder = Column number.
+        y = (48 - grid.number) // 7 * 100 +10    # Quotient = Row number.
+        create_grid(game_area, grid, x, y, player.player_position)
+    game_area.pack()
+
+def restart():
+    """ Set all value to default and start the game again. """
+    player.health_points=100
+    player.combat_effectiveness=20
+    PnP.reset()
+    update_grid()
+    dice_result.config(text=f"Dice Roll: {0}")
+    extra_dice_result.config(text=f"Roll applied to next move: {0}")
+    challenges_text.delete(1.0, tk.END)
+
+def copy_grids():
+    """ Copy a same queue as grids. """
+    global grids # For restore grids
+    queue_copy = queue.Queue()
+    queue_temp = queue.Queue()
+    while not grids.empty():
+        i = grids.get()
+        queue_copy.put(i)
+        queue_temp.put(i)
+    grids = queue_temp # Restore grids
+    return queue_copy
+      
+# Use a queue to storage grids.
+grids = queue.Queue()
+for i in range(49):
+    grids.put(generate_grid(i))
+positions = copy_grids()
+
+root = tk.Tk()
+root.title("King Of The Hill")
+
+try: 
+    # try to load image if file can be found
+    hills_img = tk.PhotoImage(file = 'hills.gif')
+    small_hills_img = hills_img.subsample(4,4)
+    player_img = tk.PhotoImage(file = 'player.gif')
+    boss_img = tk.PhotoImage(file = 'boss.gif')
+    img_visible = True
+except tk.TclError as e: # run without image if error happen.
+    print(f"TclError: {e}, Please read User Guide Document.")
+    img_visible = False
+#   u5547386 - End
+
+#   5554570 - beginning.
+player = Player(100, 20) # Player starts with 100 health points and 120 combat effectiveness.
+
+# Create the game area. 
+game_area = tk.Canvas(root, width=710, height=710, bg="white") 
+game_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True) 
+
+update_grid() # Draw the initial grid.
+
+# Create a side panel for additional information. 
+side_panel = tk.Frame(root, bg="#C7F1F0", width=400) 
+side_panel.pack_propagate(False) # Prevents resizing
+side_panel.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10) 
+
+# Create a player information frame. 
+player_info_frame = tk.Frame(side_panel, bg="#C7F1F0")
+player_info_frame.pack(fill=tk.X)
+player_label = tk.Label(player_info_frame, text="Player Info", bg="#C7F1F0")
+player_label.pack()
+#   Edited by 5547386.
+# Show hp and ce as a bar. Show the value in class, instead of a fix number.
+hp_label = tk.Label(player_info_frame, text=f"HP: {player.health_points}", bg="red", width=player.health_points//2)
+hp_label.pack()
+ce_label = tk.Label(player_info_frame, text=f"CE: {player.combat_effectiveness}", fg='white', bg="blue", width=player.combat_effectiveness//2)
+ce_label.pack()
+if img_visible:
+    label_img = tk.Label(side_panel, image = hills_img) # Display a background at side panel.
+    label_img.pack(side="bottom")
+#   Edited by 5547386. 
+
+# Create a frame to display the challenges and outcomes.
+challenges_frame = tk.Frame(side_panel, bg="#C7F1F0")
+challenges_frame.pack(fill=tk.X)
+challenges_label = tk.Label(challenges_frame, text="Challenge:", bg="#C7F1F0")
+challenges_label.pack()
+challenges_text = tk.Text(challenges_frame, height=15, width=40)
+challenges_text.pack()
+
+# Creates a game control frame.
+controls_frame = tk.Frame(side_panel, bg="#C7F1F0")
+controls_frame.pack(fill=tk.X)
+roll_button = tk.Button(challenges_frame, text="Roll Dice", command=roll_and_move)
+roll_button.pack()
+dice_result = tk.Label(controls_frame, text="Roll: ", bg="#C7F1F0")
+dice_result.pack()
+extra_dice_result = tk.Label(controls_frame, text="Extra Roll: ", bg="#C7F1F0")
+extra_dice_result.pack()
+quit_button = tk.Button(controls_frame, text="Quit", command=root.destroy)
+quit_button.pack()
+#   5554570 - end.
+
+win_acknowledge_button = tk.Button(challenges_frame, text="Acknowledge", command=lambda: win_button(True))
+
+def win_button(show_roll=True):
+    """ Toggle between the roll and acknowledge button """
+    if show_roll:
+        PnP.tp_point()
+        win_acknowledge_button.pack_forget()
+        roll_button.pack()
+    else:
+        challenges_text.insert(tk.END, f"You Win!\nPower up: You will be moved to"
+                                "\nthe nearest Point tile ahead\nif available")
+        roll_button.pack_forget()
+        win_acknowledge_button.pack()
+#    5553980 - end
+
+
+
+# Runs the game.
+root.mainloop()
