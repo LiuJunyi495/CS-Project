@@ -338,7 +338,6 @@ def roll_and_move():
     dice_result.config(text=f"Dice Roll: {steps}")
     extra_dice_result.config(text=f"Roll applied to next move: {0}")
     current_grid = player.player_position
-    #    5553980 - start
     
 
     if positions.empty():
@@ -666,7 +665,7 @@ extra_dice_result.pack()
 quit_button = tk.Button(controls_frame, text="Quit", command=root.destroy)
 quit_button.pack()
 #   5554570 - end.
-
+#    5553980 - start
 win_acknowledge_button = tk.Button(challenges_frame, text="Acknowledge", command=lambda: win_button(True))
 
 def win_button(show_roll=True):
