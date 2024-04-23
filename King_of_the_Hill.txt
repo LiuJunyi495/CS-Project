@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.messagebox
 import random
 import queue
+import os
 
 
 #   u5547386 - Start
@@ -603,16 +604,30 @@ positions = copy_grids()
 root = tk.Tk()
 root.title("King Of The Hill")
 
-try: 
-    # try to load image if file can be found
-    hills_img = tk.PhotoImage(file = 'hills.gif')
-    small_hills_img = hills_img.subsample(4,4)
-    player_img = tk.PhotoImage(file = 'player.gif')
-    boss_img = tk.PhotoImage(file = 'boss.gif')
-    img_visible = True
-except tk.TclError as e: # run without image if error happen.
-    print(f"TclError: {e}, Please read User Guide Document.")
-    img_visible = False
+if os.path.exists('Pictures'): # check if pictures in folder or not.
+    try: 
+        # try to load image if file can be found
+        hills_img = tk.PhotoImage(file = os.path.join('Pictures','hills.gif'))
+        small_hills_img = hills_img.subsample(4,4) # shrink the pictures to 1/4
+        player_img = tk.PhotoImage(file = os.path.join('Pictures','player.gif'))
+        boss_img = tk.PhotoImage(file = os.path.join('Pictures','boss.gif'))
+        img_visible = True
+    except tk.TclError as e: # run without image if error happen.
+        print(f"TclError: {e}, Please read User Guide Document.")
+        img_visible = False
+else: # If pictures is in same folder as the file.
+    try: 
+        # try to load image if file can be found
+        hills_img = tk.PhotoImage(file = 'hills.gif')
+        small_hills_img = hills_img.subsample(4,4) # shrink the pictures to 1/4
+        player_img = tk.PhotoImage(file = 'player.gif')
+        boss_img = tk.PhotoImage(file = 'boss.gif')
+        img_visible = True
+    except tk.TclError as e: # run without image if error happen.
+        print(f"TclError: {e}, Please read User Guide Document.")
+        img_visible = False
+#   u5547386 - End
+
 #   u5547386 - End
 
 #   5554570 - beginning.
